@@ -1,15 +1,38 @@
-"use client";
-
-import React from "react";
-import { useAppContext } from "@/context/AppContext";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import { CheckSquare, Flame, TrendingUp, Trophy } from "lucide-react";
+import { Heatmap } from "@/components/Heatmap";
+import { Task, Skill } from "@prisma/client";
 
-export default function DashboardOverview() {
-  const { skills, tasks, totalXP, userLevel } = useAppContext();
+export default async function DashboardOverview() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    redirect("/");
+  }
 
-  const completedTasks = tasks.filter(t => t.completed).length;
-  const recentTasks = tasks.filter(t => !t.completed).slice(0, 3);
-  const topSkills = [...skills].sort((a,b) => b.level - a.level).slice(0, 3);
+  // Fetch user stats, skills, and tasks
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: {
+      skills: {
+        orderBy: { level: 'desc' },
+        take: 3
+      },
+      tasks: {
+        where: { completed: false },
+        orderBy: { createdAt: 'desc' },
+        take: 3
+      }
+    }
+  });
+
+  if (!user) return null;
+
+  const completedTasksCount = await prisma.task.count({
+    where: { userId: session.user.id, completed: true }
+  });
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
@@ -26,7 +49,7 @@ export default function DashboardOverview() {
           </div>
           <div>
             <div className="text-sm font-medium text-neutral-400">Total XP</div>
-            <div className="text-2xl font-bold text-white">{totalXP}</div>
+            <div className="text-2xl font-bold text-white">{user.totalXP}</div>
           </div>
         </div>
 
@@ -36,7 +59,7 @@ export default function DashboardOverview() {
           </div>
           <div>
             <div className="text-sm font-medium text-neutral-400">Quests Completed</div>
-            <div className="text-2xl font-bold text-white">{completedTasks}</div>
+            <div className="text-2xl font-bold text-white">{completedTasksCount}</div>
           </div>
         </div>
 
@@ -46,10 +69,13 @@ export default function DashboardOverview() {
           </div>
           <div>
             <div className="text-sm font-medium text-neutral-400">Current Level</div>
-            <div className="text-2xl font-bold text-white">{userLevel}</div>
+            <div className="text-2xl font-bold text-white">{user.level}</div>
           </div>
         </div>
       </div>
+
+      {/* Heatmap Section */}
+      <Heatmap />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Active Quests */}
@@ -62,10 +88,10 @@ export default function DashboardOverview() {
           </div>
 
           <div className="space-y-3">
-            {recentTasks.length === 0 ? (
+            {user.tasks.length === 0 ? (
               <div className="text-neutral-500 text-sm py-4">No active quests. Time to rest block.</div>
             ) : (
-              recentTasks.map(task => (
+              user.tasks.map((task: Task) => (
                 <div key={task.id} className="p-4 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between group">
                   <div className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-md border border-white/20" />
@@ -89,7 +115,9 @@ export default function DashboardOverview() {
           </div>
 
           <div className="space-y-4">
-            {topSkills.map(skill => (
+            {user.skills.length === 0 ? (
+               <div className="text-neutral-500 text-sm py-4">Start tracking skills to see them here!</div>
+            ) : user.skills.map((skill: Skill) => (
               <div key={skill.id} className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                    <span className="font-semibold text-white">{skill.name}</span>

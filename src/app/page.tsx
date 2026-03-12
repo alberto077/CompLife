@@ -1,4 +1,5 @@
-import { ArrowRight, Github, Target, Zap, Trophy, Activity, GitCommit, SearchCode } from "lucide-react";
+import { Target, Zap, Trophy, Activity, GitCommit, SearchCode } from "lucide-react";
+import { LoginButtons } from "@/components/LoginButtons";
 
 export default function Home() {
   return (
@@ -19,14 +20,7 @@ export default function Home() {
           Build skills, earn badges, and dominate your goals.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
-          <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-white text-black font-semibold hover:bg-neutral-200 transition-all active:scale-95 flex items-center justify-center gap-2">
-            Start Grinding <ArrowRight className="w-4 h-4" />
-          </button>
-          <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-neutral-900 border border-white/10 text-white font-semibold hover:bg-neutral-800 transition-all active:scale-95 flex items-center justify-center gap-2">
-            <Github className="w-5 h-5" /> Sign in with Github
-          </button>
-        </div>
+        <LoginButtons />
       </section>
 
       {/* Bento Grid Features */}
@@ -49,7 +43,7 @@ export default function Home() {
               {/* Mock Heatmap */}
               <div className="mt-8 flex gap-2 flex-wrap max-w-md">
                 {[...Array(35)].map((_, i) => {
-                  const intensity = Math.random();
+                  const intensity = (i * 7) % 100 / 100; // Deterministic pseudo-randomness replacing Math.random()
                   return (
                     <div 
                       key={i} 
@@ -101,7 +95,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold">Auto Tasks</h3>
               <p className="text-neutral-400">
-                Set a goal and we'll chunk it down into bite-sized daily quests for you automatically.
+                Set a goal and we&apos;ll chunk it down into bite-sized daily quests for you automatically.
               </p>
             </div>
           </div>
