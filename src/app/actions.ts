@@ -249,9 +249,15 @@ export async function deleteAccount() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) throw new Error("Unauthorized")
 
-  await prisma.user.delete({
-    where: { id: session.user.id }
-  })
+  // Explicitly wipe all data first to prevent Silent Cascade Failures
+  await prisma.$transaction([
+    prisma.task.deleteMany({ where: { userId: session.user.id } }),
+    prisma.skill.deleteMany({ where: { userId: session.user.id } }),
+    prisma.activityLog.deleteMany({ where: { userId: session.user.id } }),
+    prisma.session.deleteMany({ where: { userId: session.user.id } }),
+    prisma.account.deleteMany({ where: { userId: session.user.id } }),
+    prisma.user.delete({ where: { id: session.user.id } })
+  ])
 }
 
 export async function updateIntegrations(githubUsername: string, leetcodeUsername: string) {
@@ -287,11 +293,10 @@ export async function syncIntegrations() {
   if (user.githubUsername) {
     const commitsToday = await fetchGitHubCommits(user.githubUsername);
     if (commitsToday > 0) {
-      // Check if we already logged GH Commits today to prevent infinite XP farming
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const loggedToday = await prisma.activityLog.findFirst({
+      const logsToday = await prisma.activityLog.findMany({
         where: {
           userId: user.id,
           actionType: "GITHUB_SYNC",
@@ -299,21 +304,30 @@ export async function syncIntegrations() {
         }
       });
 
-      if (!loggedToday) {
-        const ghXp = commitsToday * 10; // 10 XP per commit
+      let previouslySyncedCommits = 0;
+      for (const log of logsToday) {
+        if (log.description) {
+          const match = log.description.match(/(\d+)\s+commits/);
+          if (match) previouslySyncedCommits += parseInt(match[1], 10);
+        }
+      }
+
+      if (commitsToday > previouslySyncedCommits) {
+        const diff = commitsToday - previouslySyncedCommits;
+        const ghXp = diff * 10; // 10 XP per commit
         xpAdded += ghXp;
-        syncMessages.push(`Synced ${commitsToday} GitHub commits`);
+        syncMessages.push(`Synced ${diff} GitHub commit(s)`);
 
         await prisma.activityLog.create({
           data: {
             userId: user.id,
             actionType: "GITHUB_SYNC",
-            description: `GitHub Sync: ${commitsToday} commits`,
+            description: `GitHub Sync: ${diff} commits`,
             xpEarned: ghXp
           }
         });
       } else {
-        syncMessages.push(`GitHub already synced for today`);
+        syncMessages.push(`GitHub already fully synced for today`);
       }
     }
   }

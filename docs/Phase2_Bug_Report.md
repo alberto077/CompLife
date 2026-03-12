@@ -1,28 +1,25 @@
-# Phase 2 Readiness: Bug Report & Fix Plan
+# Phase 2 Readiness: Audit & Bug Report
 
-After auditing the recent updates you made to the XP progression system and Task logic (Priorities and Recurring tasks), I've identified two critical integration bugs that must be resolved before proceeding.
+I have performed a source-code review of the new Phase 2 changes including the new Database parameters, NextAuth credential handling, AI integration, and the GitHub/LeetCode integration functionality. Overall, the integration logic is very neat!
 
-## Found Bugs
+I did, however, find two logic flaws that should be resolved before scaling the app any further.
 
-1. **Broken `Lazy Reset` for Recurring Quests**
-   - **Bug:** In `src/app/actions.ts`, you added excellent logic to lazily reset recurring Daily and Weekly quests based on their `completedAt` timestamps. However, you placed this logic inside the `getUserData()` function, **which is currently never called anywhere in the codebase**. 
-   - **Impact:** Because the function doesn't execute, recurring tasks will remain checked off forever and will never reset the next day/week.
+## Bugs Found
 
-2. **Desynced Sidebar UI (Ghost XP)**
-   - **Bug:** `src/app/dashboard/layout.tsx` relies on the old hardcoded Level/XP calculation for its sidebar progress bar: `(totalXP % 200) / 200`. 
-   - **Impact:** Now that you've implemented dynamic `currentLevelXp` and `xpToNextLevel` in the database, the sidebar UI will show completely incorrect values compared to the Overview page, breaking the user's perception of their progress.
+### 1. GitHub "Once-Per-Day" Sync Trap
+* **Location:** `src/app/actions.ts` -> `syncIntegrations()`
+* **Issue:** The GitHub sync utilizes a strict `if (!loggedToday)` blocker. If a user pushes 1 commit in the morning and hits "Sync", they get 10 XP and a `GITHUB_SYNC` log is created for today. If they push 5 more commits in the afternoon and hit "Sync" again, the function sees the morning's log, prints `"GitHub already synced for today"`, and grants **0 XP** for the new 5 commits. Those commits are permanently lost relative to the user's progression system!
+* **Proposed Fix:** We need to adapt the differential logic you built for LeetCode. Instead of locking the sync for the rest of the day, we should read the total `commitsToday` and subtract any commits already credited to the user for that day, granting XP only for the difference.
+
+### 2. Registration XP Curve Mismatch
+* **Location:** `src/app/api/auth/register/route.ts`
+* **Issue:** The API route hardcodes the newly created user to `xpToNextLevel: 100`. But in `schema.prisma`, the global application default is explicitly `xpToNextLevel = 200`. This creates a broken, wildly fast initial XP curve for users who sign up via Email vs those who sign up via Demo/OAuth.
+* **Proposed Fix:** Modify the registration endpoint to insert `xpToNextLevel: 200` to synchronize with your database schema.
 
 ---
 
-## Proposed Fixes
+## Action Plan
+1. **Modify `src/app/actions.ts`**: Update the `GITHUB_SYNC` query to sum up previous commits processed today, and take the difference from the new `commitsToday` total.
+2. **Modify `src/app/api/auth/register/route.ts`**: Standardize the XP initialization.
 
-Here is the implementation plan to patch these issues:
-
-### 1. Fix the Sidebar UI XP Bar
-**[MODIFY] `src/app/dashboard/layout.tsx`**
-- Update the sidebar UI to respect the new database fields.
-
-### 2. Trigger the Recurring Quests Reset
-**[MODIFY] `src/app/dashboard/layout.tsx`**
-- Instead of calling `await prisma.user.findUnique()`, we will modify the Layout to import and call `await getUserData()`.
-- Because NextJS Layouts wrap every single dashboard page, this guarantees that the lazy reset check runs seamlessly in the background any time the user navigating within the app, ensuring their Daily/Weekly quests reset without manual intervention.
+Let me know if you would like me to proceed with these fixes!

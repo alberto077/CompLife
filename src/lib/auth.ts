@@ -39,8 +39,10 @@ export const authOptions: NextAuthOptions = {
               data: {
                 name: "Player One (Demo)",
                 email: "demo@aura.com",
-                level: 4,
-                totalXP: 570,
+                level: 1,
+                totalXP: 0,
+                currentLevelXp: 0,
+                xpToNextLevel: 200,
               }
             })
           }

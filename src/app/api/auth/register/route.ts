@@ -35,7 +35,7 @@ export async function POST(req: Request) {
         level: 1,
         totalXP: 0,
         currentLevelXp: 0,
-        xpToNextLevel: 100,
+        xpToNextLevel: 200,
       },
     });
 
