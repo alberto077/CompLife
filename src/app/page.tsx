@@ -1,5 +1,6 @@
 import { Target, Zap, Trophy, Activity, GitCommit, SearchCode } from "lucide-react";
 import { LoginButtons } from "@/components/LoginButtons";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -101,7 +102,7 @@ export default function Home() {
           </div>
 
           {/* Card 4: Integrations */}
-          <div className="md:col-span-2 group relative overflow-hidden rounded-3xl bg-neutral-900/50 border border-white/5 p-8 flex flex-col justify-between hover:bg-neutral-900/80 transition-colors">
+          <div id="integrations" className="md:col-span-2 group relative overflow-hidden rounded-3xl bg-neutral-900/50 border border-white/5 p-8 flex flex-col justify-between hover:bg-neutral-900/80 transition-colors">
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] transition-opacity group-hover:opacity-100 opacity-50 pointer-events-none" />
             <div className="space-y-4 relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8 h-full">
               <div className="max-w-md space-y-4">
@@ -110,9 +111,9 @@ export default function Home() {
                   Connect Github, Leetcode, Canvas, Strava and more. 
                   Every pull request and every mile run earns you XP.
                 </p>
-                <button className="px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors mt-4">
+                <Link href="/dashboard/settings" className="inline-block px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors mt-4">
                   View Connectors
-                </button>
+                </Link>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

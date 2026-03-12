@@ -1,12 +1,32 @@
 "use client";
 
-import React, { useTransition } from "react";
-import { AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
-import { resetAccount, deleteAccount } from "@/app/actions";
+import React, { useState, useTransition } from "react";
+import { AlertTriangle, RefreshCw, Trash2, Github, CodeSquare, Save } from "lucide-react";
+import { resetAccount, deleteAccount, updateIntegrations } from "@/app/actions";
 import { signOut } from "next-auth/react";
 
-export default function SettingsClient({ user }: { user: { email: string } }) {
+export default function SettingsClient({ 
+  user, 
+  initialGithub, 
+  initialLeetcode 
+}: { 
+  user: { email: string },
+  initialGithub: string | null,
+  initialLeetcode: string | null
+}) {
   const [isPending, startTransition] = useTransition();
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const [github, setGithub] = useState(initialGithub || "");
+  const [leetcode, setLeetcode] = useState(initialLeetcode || "");
+
+  const handleSaveIntegrations = (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(async () => {
+      await updateIntegrations(github, leetcode);
+      alert("Integrations successfully saved!");
+    });
+  };
 
   const handleReset = () => {
     if (confirm("Are you sure you want to reset all your progress? This will delete all your tasks, skills, and XP. This action cannot be undone.")) {
@@ -17,12 +37,17 @@ export default function SettingsClient({ user }: { user: { email: string } }) {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (confirm("Are you sure you want to permanently delete your account and all associated data? This cannot be undone.")) {
-      startTransition(async () => {
+      setIsDeleting(true);
+      try {
         await deleteAccount();
         await signOut({ callbackUrl: '/' });
-      });
+      } catch (error) {
+        console.error("Failed to delete account:", error);
+        setIsDeleting(false);
+        alert("Account deletion failed. Please try again.");
+      }
     }
   };
 
@@ -35,6 +60,55 @@ export default function SettingsClient({ user }: { user: { email: string } }) {
         </div>
       </header>
 
+      {/* Integrations Section */}
+      <div className="p-1 rounded-3xl bg-gradient-to-br from-indigo-500/20 via-neutral-900/50 to-neutral-900/50 border border-white/5">
+        <form onSubmit={handleSaveIntegrations} className="p-6 bg-neutral-950/80 rounded-[22px] backdrop-blur-xl space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-white mb-1">External Integrations</h2>
+            <p className="text-sm text-neutral-400">Link your public profiles to sync your activity to Aura.</p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-neutral-300 flex items-center gap-2">
+                <Github className="w-4 h-4 text-white" /> GitHub Username
+              </label>
+              <input 
+                type="text" 
+                value={github}
+                onChange={e => setGithub(e.target.value)}
+                disabled={isPending}
+                placeholder="e.g. torvalds"
+                className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-neutral-300 flex items-center gap-2">
+                <CodeSquare className="w-4 h-4 text-orange-400" /> LeetCode Username
+              </label>
+              <input 
+                type="text" 
+                value={leetcode}
+                onChange={e => setLeetcode(e.target.value)}
+                disabled={isPending}
+                placeholder="e.g. neetcode"
+                className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+            </div>
+          </div>
+          
+          <button 
+             type="submit"
+             disabled={isPending}
+             className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-all disabled:opacity-50"
+           >
+             <Save className="w-4 h-4" /> {isPending ? "Saving..." : "Save Integrations"}
+           </button>
+        </form>
+      </div>
+
+      {/* Danger Zone */}
       <div className="p-1 rounded-3xl bg-gradient-to-br from-red-500/20 via-neutral-900/50 to-neutral-900/50 border border-white/5">
         <div className="p-6 bg-neutral-950/80 rounded-[22px] backdrop-blur-xl space-y-6">
           <div className="flex items-center gap-3">
@@ -69,10 +143,10 @@ export default function SettingsClient({ user }: { user: { email: string } }) {
               </div>
               <button 
                 onClick={handleDelete}
-                disabled={isPending}
+                disabled={isPending || isDeleting}
                 className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-red-500/10 text-red-500 font-semibold hover:bg-red-500 hover:text-white transition-all focus:ring-2 focus:ring-red-500/50 disabled:opacity-50"
               >
-                <Trash2 className="w-4 h-4" /> {isPending ? "Processing..." : "Delete Account"}
+                <Trash2 className="w-4 h-4" /> {isDeleting ? "Processing..." : "Delete Account"}
               </button>
             </div>
           </div>

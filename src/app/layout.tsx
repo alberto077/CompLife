@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { NavbarAuth } from "@/components/NavbarAuth";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,14 +34,11 @@ export default function RootLayout({
               <span className="font-bold text-lg tracking-tight">Aura</span>
             </div>
             <div className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-400">
-              <a href="#features" className="hover:text-white transition-colors">Features</a>
-              <a href="#dashboard" className="hover:text-white transition-colors">Dashboard</a>
-              <a href="#integrations" className="hover:text-white transition-colors">Integrations</a>
+              <a href="/#features" className="hover:text-white transition-colors">Features</a>
+              <a href="/dashboard" className="hover:text-white transition-colors">Dashboard</a>
+              <a href="/#integrations" className="hover:text-white transition-colors">Integrations</a>
             </div>
-            <div className="flex items-center gap-4">
-              <button className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">Log in</button>
-              <button className="text-sm font-medium px-4 py-2 rounded-full bg-white text-black hover:bg-neutral-200 transition-colors">Get Started</button>
-            </div>
+            <NavbarAuth />
           </div>
         </nav>
 

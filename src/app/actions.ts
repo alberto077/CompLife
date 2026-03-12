@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { fetchGitHubCommits, fetchLeetCodeGenerals } from "@/lib/integrations"
+import { generateAITaskBreakdown } from "@/lib/ai"
 
 const XP_MULTIPLIER = 1.5;
 
@@ -250,5 +252,166 @@ export async function deleteAccount() {
   await prisma.user.delete({
     where: { id: session.user.id }
   })
+}
+
+export async function updateIntegrations(githubUsername: string, leetcodeUsername: string) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) throw new Error("Unauthorized")
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      githubUsername: githubUsername || null,
+      leetcodeUsername: leetcodeUsername || null
+    }
+  })
+
+  revalidatePath('/dashboard/settings')
+  revalidatePath('/dashboard')
+}
+
+export async function syncIntegrations() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) throw new Error("Unauthorized")
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id }
+  });
+
+  if (!user) throw new Error("User not found");
+
+  let xpAdded = 0;
+  let syncMessages = [];
+
+  // GH SYNC
+  if (user.githubUsername) {
+    const commitsToday = await fetchGitHubCommits(user.githubUsername);
+    if (commitsToday > 0) {
+      // Check if we already logged GH Commits today to prevent infinite XP farming
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const loggedToday = await prisma.activityLog.findFirst({
+        where: {
+          userId: user.id,
+          actionType: "GITHUB_SYNC",
+          date: { gte: today }
+        }
+      });
+
+      if (!loggedToday) {
+        const ghXp = commitsToday * 10; // 10 XP per commit
+        xpAdded += ghXp;
+        syncMessages.push(`Synced ${commitsToday} GitHub commits`);
+
+        await prisma.activityLog.create({
+          data: {
+            userId: user.id,
+            actionType: "GITHUB_SYNC",
+            description: `GitHub Sync: ${commitsToday} commits`,
+            xpEarned: ghXp
+          }
+        });
+      } else {
+        syncMessages.push(`GitHub already synced for today`);
+      }
+    }
+  }
+
+  // LC SYNC
+  if (user.leetcodeUsername) {
+    const totalSolved = await fetchLeetCodeGenerals(user.leetcodeUsername);
+    
+    if (totalSolved > 0) {
+       // Check last recorded Leetcode total count
+       const lastLog = await prisma.activityLog.findFirst({
+         where: { userId: user.id, actionType: "LEETCODE_SYNC" },
+         orderBy: { date: 'desc' }
+       });
+
+       // Basic logic: if total solved > previously parsed count, grant difference
+       // For MVP, we'll store the total solved in the description string like a crude state: "LeetCode Sync: 15"
+       let previousTotal = 0;
+       if (lastLog?.description) {
+         const match = lastLog.description.match(/\d+$/);
+         if (match) previousTotal = parseInt(match[0], 10);
+       }
+
+       if (totalSolved > previousTotal) {
+         const diff = totalSolved - previousTotal;
+         const lcXp = diff * 50; // 50 XP per LC problem
+         xpAdded += lcXp;
+         syncMessages.push(`Synced ${diff} new LeetCode problem(s)`);
+
+         await prisma.activityLog.create({
+           data: {
+             userId: user.id,
+             actionType: "LEETCODE_SYNC",
+             description: `LeetCode Sync: ${totalSolved}`,
+             xpEarned: lcXp
+           }
+         });
+       } else {
+         syncMessages.push(`No new LeetCode problems found`);
+       }
+    }
+  }
+
+  // Award the XP
+  if (xpAdded > 0) {
+    const newTotalXP = user.totalXP + xpAdded;
+    const { newXp, newLevel, newXpToNext } = calculateLevelAndXP(
+      user.currentLevelXp, 
+      xpAdded, 
+      user.level, 
+      user.xpToNextLevel
+    );
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        totalXP: newTotalXP, 
+        currentLevelXp: newXp,
+        level: newLevel,
+        xpToNextLevel: newXpToNext
+      }
+    });
+  }
+
+  revalidatePath('/dashboard');
+  
+  return {
+    success: true,
+    xpAdded,
+    messages: syncMessages.length > 0 ? syncMessages : ["No external integrations linked."]
+  };
+}
+
+export async function generateTasksFromAI(goal: string, skillId?: string) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) throw new Error("Unauthorized")
+
+  const subTasks = await generateAITaskBreakdown(goal);
+  
+  if (!subTasks || subTasks.length === 0) {
+    throw new Error("AI failed to generate tasks. Please try again or check your API key.");
+  }
+
+  // Map generated string array into Prisma Task objects
+  const taskData = subTasks.map(title => ({
+    title,
+    userId: session.user.id,
+    skillId: skillId || null,
+    priority: "MEDIUM",
+    xpReward: 30
+  }));
+
+  // Bulk Insert
+  await prisma.task.createMany({
+    data: taskData
+  });
+
+  revalidatePath('/dashboard/tasks');
+  revalidatePath('/dashboard');
 }
 

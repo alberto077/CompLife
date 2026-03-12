@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Plus, Check, Trash2, Zap, RotateCw, AlertCircle } from "lucide-react";
-import { addTask, toggleTaskCompletion, deleteTask } from "@/app/actions";
+import { Plus, Check, Trash2, Zap, RotateCw, AlertCircle, Sparkles } from "lucide-react";
+import { addTask, toggleTaskCompletion, deleteTask, generateTasksFromAI } from "@/app/actions";
 import { Task, Skill } from "@prisma/client";
 
 export default function TasksClient({ initialSkills, initialTasks }: { initialSkills: Skill[], initialTasks: Task[] }) {
@@ -12,6 +12,10 @@ export default function TasksClient({ initialSkills, initialTasks }: { initialSk
   const [skillId, setSkillId] = useState<string>("");
   const [priority, setPriority] = useState<string>("MEDIUM");
   const [recurringType, setRecurringType] = useState<string>("NONE");
+
+  // AI Gen State
+  const [aiGoal, setAiGoal] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +32,23 @@ export default function TasksClient({ initialSkills, initialTasks }: { initialSk
       setSkillId("");
       setPriority("MEDIUM");
       setRecurringType("NONE");
+    });
+  };
+
+  const handleGenerateAI = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiGoal.trim() || isPending || isGenerating) return;
+    
+    setIsGenerating(true);
+    startTransition(async () => {
+      try {
+        await generateTasksFromAI(aiGoal, skillId || undefined);
+        setAiGoal("");
+      } catch(err: any) {
+        alert(err.message || "Failed to generate AI tasks.");
+      } finally {
+        setIsGenerating(false);
+      }
     });
   };
 
@@ -122,6 +143,38 @@ export default function TasksClient({ initialSkills, initialTasks }: { initialSk
                   className="ml-auto flex items-center gap-2 px-6 py-2 rounded-xl bg-white text-black font-semibold hover:bg-neutral-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                  <Plus className="w-4 h-4" /> {isPending ? "Adding..." : "Add Quest"}
+               </button>
+             </div>
+           </form>
+        </div>
+      </div>
+
+      {/* AI Project Planner */}
+      <div className="p-1 rounded-3xl bg-gradient-to-br from-purple-500/20 via-neutral-900/50 to-neutral-900/50 border border-white/5">
+        <div className="p-6 bg-neutral-950/80 rounded-[22px] backdrop-blur-xl">
+           <form onSubmit={handleGenerateAI} className="flex flex-col gap-4">
+             <div className="flex flex-col md:flex-row items-center gap-4">
+               <div className="flex items-center gap-4 flex-1 w-full">
+                 <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                   <Sparkles className="w-5 h-5 text-purple-400" />
+                 </div>
+                 <input 
+                    type="text" 
+                    value={aiGoal}
+                    onChange={e => setAiGoal(e.target.value)}
+                    disabled={isPending || isGenerating}
+                    placeholder="AI Auto-Plan: 'Build a NextJS blog' or 'Prepare for Calculus mid-term'"
+                    className="flex-1 bg-transparent border-none text-white text-base placeholder:text-neutral-500 focus:outline-none focus:ring-0 disabled:opacity-50"
+                 />
+               </div>
+               
+               <button 
+                  type="submit"
+                  disabled={!aiGoal.trim() || isPending || isGenerating}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-purple-500/10 text-purple-400 font-bold hover:bg-purple-500 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                 <Sparkles className={`w-4 h-4 ${isGenerating ? 'animate-pulse' : ''}`} /> 
+                 {isGenerating ? "AI is Planning..." : "Generate Quests"}
                </button>
              </div>
            </form>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { CheckSquare, Flame, TrendingUp, Trophy, AlertCircle, RotateCw } from "lucide-react";
 import { Heatmap } from "@/components/Heatmap";
+import SyncWidget from "./SyncWidget";
 import { Task, Skill } from "@prisma/client";
 
 export default async function DashboardOverview() {
@@ -84,6 +85,12 @@ export default async function DashboardOverview() {
           </div>
         </div>
       </div>
+
+      {/* Sync Widget */}
+      <SyncWidget 
+        hasGithub={!!user.githubUsername} 
+        hasLeetcode={!!user.leetcodeUsername} 
+      />
 
       {/* Heatmap Section */}
       <Heatmap />

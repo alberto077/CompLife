@@ -18,5 +18,11 @@ export default async function SettingsPage() {
     redirect("/");
   }
 
-  return <SettingsClient user={{ email: user.email || "No email" }} />;
+  return (
+    <SettingsClient 
+      user={{ email: user.email || "No email" }} 
+      initialGithub={user.githubUsername}
+      initialLeetcode={user.leetcodeUsername}
+    />
+  );
 }

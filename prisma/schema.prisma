@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -41,18 +41,23 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  
-  // Custom Game State
-  level         Int       @default(1)
-  totalXP       Int       @default(0)
-  currentLevelXp Int      @default(0)
-  xpToNextLevel Int       @default(200)
+  password      String?
 
-  accounts      Account[]
-  sessions      Session[]
-  skills        Skill[]
-  tasks         Task[]
-  activityLogs  ActivityLog[]
+  // Integration Users
+  githubUsername   String?
+  leetcodeUsername String?
+
+  // Custom Game State
+  level          Int @default(1)
+  totalXP        Int @default(0)
+  currentLevelXp Int @default(0)
+  xpToNextLevel  Int @default(200)
+
+  accounts     Account[]
+  sessions     Session[]
+  skills       Skill[]
+  tasks        Task[]
+  activityLogs ActivityLog[]
 }
 
 model VerificationToken {
@@ -67,7 +72,7 @@ model VerificationToken {
 model Skill {
   id            String   @id @default(cuid())
   name          String
-  category      String   // "Coding", "Health", "School", "Other"
+  category      String // "Coding", "Health", "School", "Other"
   level         Int      @default(1)
   xp            Int      @default(0)
   xpToNextLevel Int      @default(100)
@@ -76,36 +81,43 @@ model Skill {
   tasks         Task[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Task {
-  id          String    @id @default(cuid())
-  title       String
-  xpReward    Int       @default(50)
-  completed   Boolean   @default(false)
-  
-  priority      String    @default("MEDIUM") // "LOW", "MEDIUM", "HIGH"
-  isRecurring   Boolean   @default(false)
-  recurringType String?   // "DAILY", "WEEKLY", "MONTHLY"
-  
-  skillId     String?
-  skill       Skill?    @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  id        String  @id @default(cuid())
+  title     String
+  xpReward  Int     @default(50)
+  completed Boolean @default(false)
 
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  priority      String  @default("MEDIUM") // "LOW", "MEDIUM", "HIGH"
+  isRecurring   Boolean @default(false)
+  recurringType String? // "DAILY", "WEEKLY", "MONTHLY"
+
+  skillId String?
+  skill   Skill?  @relation(fields: [skillId], references: [id], onDelete: SetNull)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime  @default(now())
   completedAt DateTime?
+
+  @@index([userId])
+  @@index([skillId])
 }
 
 model ActivityLog {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  actionType  String   // "TASK_COMPLETED", "SKILL_LEVELED_UP", "GITHUB_COMMIT"
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  actionType  String // "TASK_COMPLETED", "SKILL_LEVELED_UP", "GITHUB_COMMIT"
   description String?
-  xpEarned    Int      @default(0)
-  
-  date        DateTime @default(now())
+  xpEarned    Int     @default(0)
+
+  date DateTime @default(now())
+
+  @@index([userId])
 }

@@ -2,8 +2,8 @@ import Link from "next/link";
 import { LayoutDashboard, Target, CheckSquare, Settings, Flame } from "lucide-react";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { getUserData } from "@/app/actions";
 import { LogoutButton } from "@/components/LogoutButton";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 async function Sidebar() {
@@ -12,9 +12,7 @@ async function Sidebar() {
     redirect("/");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id }
-  });
+  const user = await getUserData();
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -23,8 +21,9 @@ async function Sidebar() {
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
-  const totalXP = user?.totalXP || 0;
   const userLevel = user?.level || 1;
+  const currentXp = user?.currentLevelXp || 0;
+  const xpToNext = user?.xpToNextLevel || 200;
 
   return (
     <div className="w-64 h-full border-r border-white/5 bg-neutral-950 flex flex-col hidden md:flex">
@@ -51,9 +50,9 @@ async function Sidebar() {
         </div>
         
         <div className="w-full bg-white/5 rounded-full h-1.5 mb-2">
-            <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${(totalXP % 200) / 200 * 100}%` }}></div>
+            <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${(currentXp / xpToNext) * 100}%` }}></div>
         </div>
-        <div className="text-xs text-neutral-500 text-right mb-8">{totalXP % 200} / 200 XP to next level</div>
+        <div className="text-xs text-neutral-500 text-right mb-8">{currentXp} / {xpToNext} XP to next level</div>
 
         <nav className="space-y-1">
           {navItems.map((item) => {

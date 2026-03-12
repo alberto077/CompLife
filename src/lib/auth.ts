@@ -12,6 +12,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GitHubProvider from "next-auth/providers/github"
 import { prisma } from "./prisma"
+import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -23,13 +24,15 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GITHUB_SECRET ?? "",
     }),
     CredentialsProvider({
-      name: "Demo Account",
+      name: "Credentials",
       credentials: {
-        username: { label: "Username (type 'demo')", type: "text", placeholder: "demo" },
-        password: { label: "Password (type 'demo')", type: "password" }
+        email: { label: "Email", type: "email", placeholder: "you@example.com" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (credentials?.username === "demo" && credentials?.password === "demo") {
+        if (!credentials?.email || !credentials?.password) return null;
+
+        if (credentials.email === "demo@aura.com" && credentials.password === "demo") {
           let user = await prisma.user.findUnique({ where: { email: "demo@aura.com" } })
           if (!user) {
             user = await prisma.user.create({
@@ -43,10 +46,25 @@ export const authOptions: NextAuthOptions = {
           }
           return { id: user.id, name: user.name, email: user.email }
         }
-        return null
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        })
+
+        if (!user || (!user.password && !user.emailVerified)) {
+          return null; // No user found or user created via OAuth with no password
+        }
+
+        const isValid = await bcrypt.compare(credentials.password, user.password || "");
+        if (!isValid) return null;
+
+        return { id: user.id, name: user.name, email: user.email }
       }
     }),
   ],
+  pages: {
+    signIn: "/login",
+  },
   callbacks: {
     session: ({ session, token }) => {
       if (session?.user && token?.sub) {
