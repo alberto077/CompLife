@@ -45,6 +45,8 @@ model User {
   // Custom Game State
   level         Int       @default(1)
   totalXP       Int       @default(0)
+  currentLevelXp Int      @default(0)
+  xpToNextLevel Int       @default(200)
 
   accounts      Account[]
   sessions      Session[]
@@ -81,6 +83,10 @@ model Task {
   title       String
   xpReward    Int       @default(50)
   completed   Boolean   @default(false)
+  
+  priority      String    @default("MEDIUM") // "LOW", "MEDIUM", "HIGH"
+  isRecurring   Boolean   @default(false)
+  recurringType String?   // "DAILY", "WEEKLY", "MONTHLY"
   
   skillId     String?
   skill       Skill?    @relation(fields: [skillId], references: [id], onDelete: SetNull)

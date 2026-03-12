@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Plus, Check, Trash2, Zap } from "lucide-react";
+import { Plus, Check, Trash2, Zap, RotateCw, AlertCircle } from "lucide-react";
 import { addTask, toggleTaskCompletion, deleteTask } from "@/app/actions";
 import { Task, Skill } from "@prisma/client";
 
@@ -10,16 +10,24 @@ export default function TasksClient({ initialSkills, initialTasks }: { initialSk
   const [title, setTitle] = useState("");
   const [xpReward, setXpReward] = useState<number>(50);
   const [skillId, setSkillId] = useState<string>("");
+  const [priority, setPriority] = useState<string>("MEDIUM");
+  const [recurringType, setRecurringType] = useState<string>("NONE");
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || isPending) return;
     
     startTransition(async () => {
-      await addTask(title, xpReward, skillId || undefined);
+      const isRecurring = recurringType !== "NONE";
+      const recType = isRecurring ? recurringType : undefined;
+      
+      await addTask(title, xpReward, skillId || undefined, priority, isRecurring, recType);
+      
       setTitle("");
       setXpReward(50);
       setSkillId("");
+      setPriority("MEDIUM");
+      setRecurringType("NONE");
     });
   };
 
@@ -71,6 +79,28 @@ export default function TasksClient({ initialSkills, initialTasks }: { initialSk
                 >
                   <option value="">Link to specific Skill... (Optional)</option>
                   {initialSkills.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+               </select>
+               
+               <select 
+                  value={priority}
+                  onChange={e => setPriority(e.target.value)}
+                  disabled={isPending}
+                  className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-neutral-300 focus:outline-none focus:border-indigo-500 transition-colors"
+                >
+                  <option value="LOW">Low Priority</option>
+                  <option value="MEDIUM">Medium Priority</option>
+                  <option value="HIGH">High Priority</option>
+               </select>
+
+               <select 
+                  value={recurringType}
+                  onChange={e => setRecurringType(e.target.value)}
+                  disabled={isPending}
+                  className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-neutral-300 focus:outline-none focus:border-indigo-500 transition-colors"
+                >
+                  <option value="NONE">One-time Quest</option>
+                  <option value="DAILY">Daily Quest</option>
+                  <option value="WEEKLY">Weekly Quest</option>
                </select>
 
                <div className="flex items-center gap-2 bg-neutral-900 border border-white/10 rounded-xl px-3 py-2">
@@ -131,16 +161,35 @@ export default function TasksClient({ initialSkills, initialTasks }: { initialSk
                   >
                     <Check className="w-4 h-4" />
                   </button>
-                  <div>
-                    <span className={`text-base font-medium transition-all ${task.completed ? "text-neutral-500 line-through" : "text-white"}`}>
+                   <div className="flex flex-col gap-1.5">
+                    <span className={`text-base font-medium transition-all flex items-center gap-2 ${task.completed ? "text-neutral-500 line-through" : "text-white"}`}>
                       {task.title}
-                    </span>
-                    {linkedSkill && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-neutral-500">Links to:</span>
-                        <span className="text-xs font-semibold text-indigo-400 px-2 py-0.5 rounded-md bg-indigo-500/10">
-                          {linkedSkill.name}
+                      
+                      {/* Priority Badge */}
+                      {!task.completed && task.priority === "HIGH" && <AlertCircle className="w-4 h-4 text-red-400" />}
+                      {!task.completed && task.priority === "LOW" && <AlertCircle className="w-4 h-4 text-blue-400" />}
+                      
+                      {/* Recurring Badge */}
+                      {task.isRecurring && (
+                        <span className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded-md">
+                          <RotateCw className="w-3 h-3" /> {task.recurringType}
                         </span>
+                      )}
+                    </span>
+                    {(linkedSkill || task.priority) && (
+                      <div className="flex items-center gap-2">
+                        {linkedSkill && (
+                          <span className="text-xs font-semibold text-indigo-400 px-2 py-0.5 rounded-md bg-indigo-500/10">
+                            Linked: {linkedSkill.name}
+                          </span>
+                        )}
+                        {task.priority !== "MEDIUM" && !task.completed && (
+                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                              task.priority === "HIGH" ? "text-red-400 bg-red-400/10" : "text-blue-400 bg-blue-400/10"
+                           }`}>
+                             {task.priority} Priority
+                           </span>
+                        )}
                       </div>
                     )}
                   </div>

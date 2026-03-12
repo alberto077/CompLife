@@ -25,6 +25,37 @@ export async function getUserData() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return null
 
+  // Lazy Reset Recurring Quests
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Daily Quests completed before today
+  await prisma.task.updateMany({
+    where: {
+      userId: session.user.id,
+      isRecurring: true,
+      recurringType: "DAILY",
+      completed: true,
+      completedAt: { lt: today }
+    },
+    data: { completed: false, completedAt: null }
+  });
+
+  // Weekly Quests completed before 7 days ago
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  weekAgo.setHours(0, 0, 0, 0);
+  await prisma.task.updateMany({
+    where: {
+      userId: session.user.id,
+      isRecurring: true,
+      recurringType: "WEEKLY",
+      completed: true,
+      completedAt: { lt: weekAgo }
+    },
+    data: { completed: false, completedAt: null }
+  });
+
   return await prisma.user.findUnique({
     where: { id: session.user.id },
     include: {
@@ -54,7 +85,14 @@ export async function addSkill(name: string, category: string) {
   revalidatePath('/dashboard/skills')
 }
 
-export async function addTask(title: string, xpReward: number, skillId?: string) {
+export async function addTask(
+  title: string, 
+  xpReward: number, 
+  skillId?: string,
+  priority: string = "MEDIUM",
+  isRecurring: boolean = false,
+  recurringType?: string
+) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) throw new Error("Unauthorized")
 
@@ -66,7 +104,10 @@ export async function addTask(title: string, xpReward: number, skillId?: string)
       title,
       xpReward,
       skillId: skillId || null,
-      userId: session.user.id
+      userId: session.user.id,
+      priority,
+      isRecurring,
+      recurringType: recurringType || null
     }
   })
 
@@ -100,13 +141,25 @@ export async function toggleTaskCompletion(taskId: string) {
     if (!user) return
 
     // 1. Update Global user XP and Level
-    const newTotalXP = user.totalXP + task.xpReward
-    const newUserLevel = Math.floor(newTotalXP / 200) + 1
+    const newTotalXP = user.totalXP + task.xpReward;
+    
+    // Use the dynamic XP scale for the global character level
+    const { newXp, newLevel, newXpToNext } = calculateLevelAndXP(
+      user.currentLevelXp, 
+      task.xpReward, 
+      user.level, 
+      user.xpToNextLevel
+    );
 
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { totalXP: newTotalXP, level: newUserLevel }
-    })
+      data: { 
+        totalXP: newTotalXP, 
+        currentLevelXp: newXp,
+        level: newLevel,
+        xpToNextLevel: newXpToNext
+      }
+    });
 
     // 2. Update Specific Skill XP (if linked)
     if (task.skillId) {
@@ -164,3 +217,38 @@ export async function getHeatmapActivity() {
 
   return logs
 }
+
+export async function resetAccount() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) throw new Error("Unauthorized")
+
+  await prisma.$transaction([
+    prisma.task.deleteMany({ where: { userId: session.user.id } }),
+    prisma.skill.deleteMany({ where: { userId: session.user.id } }),
+    prisma.activityLog.deleteMany({ where: { userId: session.user.id } }),
+    prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        totalXP: 0,
+        currentLevelXp: 0,
+        level: 1,
+        xpToNextLevel: 200
+      }
+    })
+  ])
+  
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/skills')
+  revalidatePath('/dashboard/tasks')
+  revalidatePath('/dashboard/settings')
+}
+
+export async function deleteAccount() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) throw new Error("Unauthorized")
+
+  await prisma.user.delete({
+    where: { id: session.user.id }
+  })
+}
+
