@@ -122,10 +122,10 @@ export default function TasksClient({ initialSkills, initialTasks }: { initialSk
                 <div className="flex items-center gap-4">
                   <button 
                     onClick={() => handleToggle(task.id)}
-                    disabled={isPending}
+                    disabled={isPending || task.completed}
                     className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors disabled:opacity-50 ${
                       task.completed 
-                        ? "bg-emerald-500 border-emerald-500 text-white" 
+                        ? "bg-emerald-500 border-emerald-500 text-white cursor-not-allowed" 
                         : "border-neutral-500 text-transparent hover:border-emerald-500 group-hover:border-indigo-400"
                     }`}
                   >

@@ -40,6 +40,9 @@ export async function addSkill(name: string, category: string) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) throw new Error("Unauthorized")
 
+  if (!name || name.trim() === "") throw new Error("Skill name is required")
+  if (!category || category.trim() === "") throw new Error("Skill category is required")
+
   await prisma.skill.create({
     data: {
       name,
@@ -54,6 +57,9 @@ export async function addSkill(name: string, category: string) {
 export async function addTask(title: string, xpReward: number, skillId?: string) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) throw new Error("Unauthorized")
+
+  if (!title || title.trim() === "") throw new Error("Task title is required")
+  if (xpReward < 10 || xpReward > 1000) throw new Error("Invalid XP reward. Must be between 10 and 1000")
 
   await prisma.task.create({
     data: {
@@ -74,6 +80,8 @@ export async function toggleTaskCompletion(taskId: string) {
 
   const task = await prisma.task.findUnique({ where: { id: taskId, userId: session.user.id } })
   if (!task) throw new Error("Task not found")
+
+  if (task.completed) throw new Error("Task already completed")
 
   const isCompleting = !task.completed
   
