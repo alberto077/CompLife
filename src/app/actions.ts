@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { fetchGitHubCommits, fetchLeetCodeGenerals } from "@/lib/integrations"
 import { generateAITaskBreakdown } from "@/lib/ai"
+import { evaluateBadges } from "@/lib/badges"
 
 const XP_MULTIPLIER = 1.5;
 
@@ -394,6 +395,9 @@ export async function syncIntegrations() {
 
   revalidatePath('/dashboard');
   
+  // Badge Evaluation
+  await evaluateBadges(session.user.id);
+  
   return {
     success: true,
     xpAdded,
@@ -427,5 +431,8 @@ export async function generateTasksFromAI(goal: string, skillId?: string) {
 
   revalidatePath('/dashboard/tasks');
   revalidatePath('/dashboard');
+  
+  // Badge Evaluation
+  await evaluateBadges(session.user.id);
 }
 

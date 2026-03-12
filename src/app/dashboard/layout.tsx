@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { LayoutDashboard, Target, CheckSquare, Settings, Flame } from "lucide-react";
+import { LayoutDashboard, Target, CheckSquare, Settings, Flame, Trophy, Award } from "lucide-react";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getUserData } from "@/app/actions";
-import { LogoutButton } from "@/components/LogoutButton";
 import { redirect } from "next/navigation";
 
 async function Sidebar() {
@@ -18,6 +17,8 @@ async function Sidebar() {
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "Skills Tracker", href: "/dashboard/skills", icon: Target },
     { name: "Daily Quests", href: "/dashboard/tasks", icon: CheckSquare },
+    { name: "Leaderboard", href: "/dashboard/leaderboard", icon: Trophy },
+    { name: "Badges", href: "/dashboard/badges", icon: Award },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
@@ -69,10 +70,6 @@ async function Sidebar() {
             );
           })}
         </nav>
-      </div>
-
-      <div className="mt-auto p-6">
-        <LogoutButton />
       </div>
     </div>
   );

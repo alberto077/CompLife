@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { NavbarAuth } from "@/components/NavbarAuth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -10,11 +12,13 @@ export const metadata: Metadata = {
   description: "Gamify your life, track your skills, and synchronize your tasks.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession(authOptions);
+
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} min-h-screen bg-neutral-950 text-neutral-50 antialiased selection:bg-indigo-500/30`}>
@@ -38,7 +42,7 @@ export default function RootLayout({
               <a href="/dashboard" className="hover:text-white transition-colors">Dashboard</a>
               <a href="/#integrations" className="hover:text-white transition-colors">Integrations</a>
             </div>
-            <NavbarAuth />
+            <NavbarAuth hasSession={!!session} />
           </div>
         </nav>
 
