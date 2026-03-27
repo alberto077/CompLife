@@ -436,3 +436,52 @@ export async function generateTasksFromAI(goal: string, skillId?: string) {
   await evaluateBadges(session.user.id);
 }
 
+export async function getStreakData() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return { streakDays: 0 }
+
+  // Get all activity dates for the user
+  const logs = await prisma.activityLog.findMany({
+    where: { userId: session.user.id },
+    select: { date: true },
+    orderBy: { date: 'desc' }
+  });
+
+  if (logs.length === 0) return { streakDays: 0 };
+
+  // Group by date string (YYYY-MM-DD)
+  const activeDates = new Set(
+    logs.map(l => {
+      const d = new Date(l.date);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    })
+  );
+
+  // Count consecutive days ending today (or yesterday)
+  let streak = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
+  // Start from today, if today has no activity, check yesterday
+  let checkDate = new Date(today);
+  if (!activeDates.has(todayStr)) {
+    checkDate.setDate(checkDate.getDate() - 1);
+    const yesterdayStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+    if (!activeDates.has(yesterdayStr)) return { streakDays: 0 };
+  }
+
+  // Count backwards
+  while (true) {
+    const dateStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+    if (activeDates.has(dateStr)) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  return { streakDays: streak };
+}
