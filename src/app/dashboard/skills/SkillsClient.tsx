@@ -4,6 +4,8 @@ import React, { useState, useTransition } from "react";
 import { Plus, Target, Code, Heart, BookOpen, Hash } from "lucide-react";
 import { addSkill } from "@/app/actions";
 import { Skill } from "@prisma/client";
+import { useToast } from "@/components/ToastProvider";
+import { motion, AnimatePresence } from "framer-motion";
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
@@ -29,6 +31,7 @@ export default function SkillsClient({ initialSkills }: { initialSkills: Skill[]
   const [newSkillName, setNewSkillName] = useState("");
   const [newSkillCategory, setNewSkillCategory] = useState("Other");
   const [activeTab, setActiveTab] = useState("All");
+  const { toast } = useToast();
 
   const handleAddSkill = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +39,7 @@ export default function SkillsClient({ initialSkills }: { initialSkills: Skill[]
     
     startTransition(async () => {
       await addSkill(newSkillName, newSkillCategory);
+      toast(`Skill "${newSkillName}" created!`, "success");
       setNewSkillName("");
       setIsAdding(false);
     });
@@ -44,8 +48,16 @@ export default function SkillsClient({ initialSkills }: { initialSkills: Skill[]
   const filteredSkills = initialSkills.filter(s => activeTab === "All" || s.category === activeTab);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-5xl mx-auto space-y-8 pb-12"
+    >
+      <motion.header
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row md:items-end justify-between gap-4"
+      >
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Skills Tracker</h1>
           <p className="text-neutral-400">Manage your skills and level up your attributes.</p>
@@ -56,15 +68,20 @@ export default function SkillsClient({ initialSkills }: { initialSkills: Skill[]
         >
           <Plus className="w-5 h-5" /> Add Skill
         </button>
-      </header>
+      </motion.header>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar"
+      >
         {["All", "Coding", "School", "Health", "Other"].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`relative px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               activeTab === tab 
                 ? "bg-white text-black" 
                 : "bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10"
@@ -73,56 +90,64 @@ export default function SkillsClient({ initialSkills }: { initialSkills: Skill[]
             {tab}
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {/* Add Skill Form */}
-      {isAdding && (
-        <form onSubmit={handleAddSkill} className="p-6 rounded-3xl bg-neutral-900 border border-indigo-500/30 shadow-lg shadow-indigo-500/10 space-y-4 animate-in fade-in slide-in-from-top-4">
-          <h3 className="text-xl font-bold text-white mb-4">Create New Skill</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-400">Skill Name</label>
-              <input 
-                type="text" 
-                autoFocus
-                value={newSkillName}
-                onChange={e => setNewSkillName(e.target.value)}
-                placeholder="e.g. Data Structures, Cardio, App Dev..." 
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-              />
+      <AnimatePresence>
+        {isAdding && (
+          <motion.form
+            initial={{ opacity: 0, y: -10, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -10, height: 0 }}
+            onSubmit={handleAddSkill}
+            className="p-6 rounded-3xl bg-neutral-900 border border-indigo-500/30 shadow-lg shadow-indigo-500/10 space-y-4 overflow-hidden"
+          >
+            <h3 className="text-xl font-bold text-white mb-4">Create New Skill</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-400">Skill Name</label>
+                <input 
+                  type="text" 
+                  autoFocus
+                  value={newSkillName}
+                  onChange={e => setNewSkillName(e.target.value)}
+                  placeholder="e.g. Data Structures, Cardio, App Dev..." 
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-400">Category</label>
+                <select 
+                  value={newSkillCategory}
+                  onChange={e => setNewSkillCategory(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                >
+                  <option value="Coding">💻 Coding & Tech</option>
+                  <option value="School">📚 School & Academics</option>
+                  <option value="Health">💪 Health & Fitness</option>
+                  <option value="Other">🗂️ Other</option>
+                </select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-400">Category</label>
-              <select 
-                value={newSkillCategory}
-                onChange={e => setNewSkillCategory(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+            <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-white/5">
+              <button 
+                type="button" 
+                onClick={() => setIsAdding(false)}
+                className="px-4 py-2 rounded-xl text-neutral-400 hover:text-white transition-colors text-sm font-medium"
               >
-                <option value="Coding">💻 Coding & Tech</option>
-                <option value="School">📚 School & Academics</option>
-                <option value="Health">💪 Health & Fitness</option>
-                <option value="Other">🗂️ Other</option>
-              </select>
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                disabled={isPending}
+                className="px-6 py-2 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-all active:scale-95 text-sm disabled:opacity-50"
+              >
+                {isPending ? "Creating..." : "Create Skill"}
+              </button>
             </div>
-          </div>
-          <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-white/5">
-            <button 
-              type="button" 
-              onClick={() => setIsAdding(false)}
-              className="px-4 py-2 rounded-xl text-neutral-400 hover:text-white transition-colors text-sm font-medium"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              disabled={isPending}
-              className="px-6 py-2 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-all text-sm disabled:opacity-50"
-            >
-              {isPending ? "Creating..." : "Create Skill"}
-            </button>
-          </div>
-        </form>
-      )}
+          </motion.form>
+        )}
+      </AnimatePresence>
 
       {/* Skills Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
@@ -132,11 +157,17 @@ export default function SkillsClient({ initialSkills }: { initialSkills: Skill[]
              No skills found in this category. Start tracking to level up!
           </div>
         ) : (
-          filteredSkills.map(skill => (
-            <div key={skill.id} className="p-6 rounded-3xl bg-neutral-900/50 border border-white/5 hover:bg-neutral-900/80 transition-all group flex flex-col justify-between min-h-[220px]">
+          filteredSkills.map((skill, i) => (
+            <motion.div
+              key={skill.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="p-6 rounded-3xl bg-neutral-900/50 border border-white/5 hover:bg-neutral-900/80 hover:border-indigo-500/20 transition-all group flex flex-col justify-between min-h-[220px]"
+            >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${getCategoryColor(skill.category)}`}>
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${getCategoryColor(skill.category)} group-hover:scale-110 transition-transform`}>
                     {getCategoryIcon(skill.category)}
                   </div>
                   <div className="px-3 py-1 rounded-lg bg-black/40 border border-white/5 text-xs font-bold text-neutral-300">
@@ -153,18 +184,20 @@ export default function SkillsClient({ initialSkills }: { initialSkills: Skill[]
                   <span>{skill.xpToNextLevel} XP</span>
                 </div>
                 <div className="w-full bg-black/60 h-2.5 rounded-full overflow-hidden p-0.5 border border-white/5">
-                  <div 
-                    className="bg-indigo-500 h-full rounded-full transition-all duration-1000 relative shadow-[0_0_10px_rgba(99,102,241,0.5)]"
-                    style={{ width: `${(skill.xp / skill.xpToNextLevel) * 100}%` }}
+                  <motion.div 
+                    className="bg-indigo-500 h-full rounded-full relative shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${(skill.xp / skill.xpToNextLevel) * 100}%` }}
+                    transition={{ duration: 1, ease: "easeOut", delay: 0.2 + i * 0.05 }}
                   >
-                    <div className="absolute inset-0 bg-white/20 w-full" style={{ maskImage: 'linear-gradient(to right, transparent, black)' }} />
-                  </div>
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white shadow-lg shadow-indigo-500/50" />
+                  </motion.div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

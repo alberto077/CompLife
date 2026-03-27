@@ -3,6 +3,7 @@
 import React, { useTransition } from "react";
 import { RefreshCw, Github, CodeSquare } from "lucide-react";
 import { syncIntegrations } from "@/app/actions";
+import { useToast } from "@/components/ToastProvider";
 
 interface SyncWidgetProps {
   hasGithub: boolean;
@@ -11,19 +12,22 @@ interface SyncWidgetProps {
 
 export default function SyncWidget({ hasGithub, hasLeetcode }: SyncWidgetProps) {
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   const handleSync = () => {
     startTransition(async () => {
       try {
         const result = await syncIntegrations();
-        if (result.messages && result.messages.length > 0) {
-          alert("Sync Complete:\n" + result.messages.join("\n"));
+        if (result.xpAdded > 0) {
+          toast(`Synced! +${result.xpAdded} XP earned`, "xp", result.xpAdded);
+        } else if (result.messages && result.messages.length > 0) {
+          toast(result.messages[0], "info");
         } else {
-          alert("Integration Sync complete.");
+          toast("Integration sync complete.", "success");
         }
       } catch (error) {
         console.error(error);
-        alert("Failed to sync integrations.");
+        toast("Failed to sync integrations.", "error");
       }
     });
   };
@@ -64,7 +68,7 @@ export default function SyncWidget({ hasGithub, hasLeetcode }: SyncWidgetProps) 
       <button 
         onClick={handleSync}
         disabled={isPending || !hasIntegrations}
-        className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-white text-black font-semibold hover:bg-neutral-200 transition-all focus:ring-2 focus:ring-white/50 disabled:opacity-50"
+        className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-white text-black font-semibold hover:bg-neutral-200 transition-all active:scale-95 focus:ring-2 focus:ring-white/50 disabled:opacity-50"
       >
         <RefreshCw className={`w-4 h-4 ${isPending ? 'animate-spin' : ''}`} /> 
         {isPending ? "Syncing..." : "Sync Activities"}
