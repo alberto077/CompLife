@@ -32,10 +32,16 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        if (credentials.email === "demo@aura.com" && credentials.password === "demo") {
-          let user = await prisma.user.findUnique({ where: { email: "demo@aura.com" } })
-          if (!user) {
-            user = await prisma.user.create({
+        try {
+          if (credentials.email === "demo@aura.com" && credentials.password === "demo") {
+            // "Renew" the demo account by deleting it if it exists
+            const existingUser = await prisma.user.findUnique({ where: { email: "demo@aura.com" } });
+            if (existingUser) {
+              await prisma.user.delete({ where: { email: "demo@aura.com" } });
+            }
+            
+            // Create a fresh demo account
+            const user = await prisma.user.create({
               data: {
                 name: "Player One (Demo)",
                 email: "demo@aura.com",
@@ -44,23 +50,27 @@ export const authOptions: NextAuthOptions = {
                 currentLevelXp: 0,
                 xpToNextLevel: 200,
               }
-            })
+            });
+            
+            return { id: user.id, name: user.name, email: user.email }
           }
+
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          })
+
+          if (!user || (!user.password && !user.emailVerified)) {
+            return null;
+          }
+
+          const isValid = await bcrypt.compare(credentials.password, user.password || "");
+          if (!isValid) return null;
+
           return { id: user.id, name: user.name, email: user.email }
+        } catch (error) {
+          console.error("[AUTH] authorize error:", error);
+          return null;
         }
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        })
-
-        if (!user || (!user.password && !user.emailVerified)) {
-          return null; // No user found or user created via OAuth with no password
-        }
-
-        const isValid = await bcrypt.compare(credentials.password, user.password || "");
-        if (!isValid) return null;
-
-        return { id: user.id, name: user.name, email: user.email }
       }
     }),
   ],
