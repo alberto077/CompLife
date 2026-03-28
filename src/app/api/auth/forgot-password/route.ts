@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       where: { email },
     });
 
-    if (!user || user.email === "demo@aura.com") {
+    if (!user || user.email === "demo@complife.com") {
       // Return 200 even if user doesn't exist to prevent email enumeration attacks
       // Also silently ignore demo account resets
       return NextResponse.json(

@@ -39,7 +39,7 @@ function LoginContent() {
     setIsLoading(true);
     const res = await signIn("credentials", {
       redirect: false,
-      email: "demo@aura.com",
+      email: "demo@complife.com",
       password: "demo",
       callbackUrl
     });

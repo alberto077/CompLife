@@ -7,7 +7,7 @@ import { addSkill, addTask } from "@/app/actions";
 import { useToast } from "@/components/ToastProvider";
 
 const STEPS = [
-  { title: "Welcome to Aura", subtitle: "Let's build your adventure in 3 steps" },
+  { title: "Welcome to CompLife", subtitle: "Let's build your adventure in 3 steps" },
   { title: "Create Your First Skill", subtitle: "Skills are categories you want to improve" },
   { title: "Add Your First Quest", subtitle: "Quests are tasks that earn you XP" },
 ];
@@ -119,7 +119,7 @@ export function OnboardingWizard() {
                 <div>
                   <h2 className="text-3xl font-black text-white mb-3">{STEPS[0].title}</h2>
                   <p className="text-neutral-400 max-w-md mx-auto">
-                    Aura turns your goals into an RPG adventure. Track skills, complete quests, and level up — all while building real habits.
+                    CompLife turns your goals into an RPG adventure. Track skills, complete quests, and level up — all while building real habits.
                   </p>
                 </div>
                 <button

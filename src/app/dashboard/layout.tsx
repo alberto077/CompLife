@@ -36,7 +36,7 @@ async function Sidebar() {
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
             <span className="font-bold text-white text-lg">A</span>
           </div>
-          <span className="font-bold text-lg tracking-tight">Aura</span>
+          <span className="font-bold text-lg tracking-tight">CompLife</span>
         </Link>
       </div>
 

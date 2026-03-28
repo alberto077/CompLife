@@ -6,7 +6,7 @@ const testimonials = [
     name: "Alex Chen",
     title: "Software Developer",
     level: 67,
-    content: "Aura completely changed how I approach learning. I've leveled up my coding skills faster than ever before. The gamification makes it addictive in the best way.",
+    content: "CompLife completely changed how I approach learning. I've leveled up my coding skills faster than ever before. The gamification makes it addictive in the best way.",
     avatar: "A",
   },
   {
@@ -20,7 +20,7 @@ const testimonials = [
     name: "James Wilson",
     title: "Language Learner",
     level: 52,
-    content: "I've tried every productivity app out there. Aura is different because it tracks ALL my skills together. My character is now fluent in 3 languages.",
+    content: "I've tried every productivity app out there. CompLife is different because it tracks ALL my skills together. My character is now fluent in 3 languages.",
     avatar: "J",
   },
 ]

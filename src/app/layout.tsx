@@ -6,7 +6,7 @@ import { Providers } from "@/components/Providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Aura | Advanced Skill Tracker",
+  title: "CompLife | Advanced Skill Tracker",
   description: "Gamify your life, track your skills, and synchronize your tasks.",
 };
 

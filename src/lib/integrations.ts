@@ -3,7 +3,7 @@ export async function fetchGitHubCommits(username: string): Promise<number> {
     const res = await fetch(`https://api.github.com/users/${username}/events/public`, {
       headers: {
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'Aura-App'
+        'User-Agent': 'CompLife-App'
       },
       next: { revalidate: 3600 } // Cache for 1 hour to prevent rate limiting
     });

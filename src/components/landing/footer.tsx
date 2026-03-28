@@ -14,9 +14,9 @@ export function Footer() {
           <div className="col-span-2 md:col-span-1">
             <a href="/" className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="font-bold text-primary-foreground text-lg">A</span>
+                <span className="font-bold text-primary-foreground text-lg">C</span>
               </div>
-              <span className="font-bold text-xl">Aura</span>
+              <span className="font-bold text-xl">CompLife</span>
             </a>
             <p className="text-sm text-muted-foreground">
               Level up your real life with gamified personal development.
@@ -45,7 +45,7 @@ export function Footer() {
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-8 mt-8 border-t border-border">
           <p className="text-sm text-muted-foreground">
-            2026 Aura. All rights reserved.
+            2026 CompLife. All rights reserved.
           </p>
           <div className="flex gap-6">
             <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

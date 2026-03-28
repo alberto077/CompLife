@@ -85,7 +85,7 @@ export default function SettingsClient({
         <form onSubmit={handleSaveIntegrations} className="p-6 bg-neutral-950/80 rounded-[22px] backdrop-blur-xl space-y-6">
           <div>
             <h2 className="text-xl font-bold text-white mb-1">External Integrations</h2>
-            <p className="text-sm text-neutral-400">Link your public profiles to sync your activity to Aura.</p>
+            <p className="text-sm text-neutral-400">Link your public profiles to sync your activity to CompLife.</p>
           </div>
 
           <div className="space-y-4">

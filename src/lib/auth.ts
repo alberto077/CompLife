@@ -33,18 +33,18 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         try {
-          if (credentials.email === "demo@aura.com" && credentials.password === "demo") {
+          if (credentials.email === "demo@complife.com" && credentials.password === "demo") {
             // "Renew" the demo account by deleting it if it exists
-            const existingUser = await prisma.user.findUnique({ where: { email: "demo@aura.com" } });
+            const existingUser = await prisma.user.findUnique({ where: { email: "demo@complife.com" } });
             if (existingUser) {
-              await prisma.user.delete({ where: { email: "demo@aura.com" } });
+              await prisma.user.delete({ where: { email: "demo@complife.com" } });
             }
             
             // Create a fresh demo account
             const user = await prisma.user.create({
               data: {
                 name: "Player One (Demo)",
-                email: "demo@aura.com",
+                email: "demo@complife.com",
                 level: 1,
                 totalXP: 0,
                 currentLevelXp: 0,
