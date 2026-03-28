@@ -128,6 +128,29 @@ export default function SettingsClient({
         </form>
       </motion.div>
 
+        {/* Account Actions */}
+      <motion.div
+         initial={{ opacity: 0, y: 20 }}
+         animate={{ opacity: 1, y: 0 }}
+         transition={{ delay: 0.15 }}
+         className="p-1 rounded-3xl bg-gradient-to-br from-neutral-800/50 via-neutral-900/50 to-neutral-900/50 border border-white/5"
+       >
+         <div className="p-6 bg-neutral-950/80 rounded-[22px] backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+           <div>
+             <h2 className="text-xl font-bold text-white mb-1">Account Actions</h2>
+             <p className="text-sm text-neutral-400">Sign out of your current session.</p>
+           </div>
+           
+           <button 
+             onClick={() => signOut({ callbackUrl: "/" })}
+             disabled={isPending}
+             className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 text-white font-medium hover:bg-white/10 transition-all active:scale-95 border border-white/10 disabled:opacity-50"
+           >
+             Sign Out
+           </button>
+         </div>
+       </motion.div>
+
       {/* Danger Zone */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

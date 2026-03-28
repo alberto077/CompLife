@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { getUserData } from "@/app/actions";
 import { redirect } from "next/navigation";
 import { MobileNav } from "@/components/MobileNav";
+import { LogoutButton } from "@/components/LogoutButton";
 
 async function Sidebar() {
   const session = await getServerSession(authOptions);
@@ -100,6 +101,10 @@ async function Sidebar() {
             );
           })}
         </nav>
+        
+        <div className="mt-8 border-t border-white/5 pt-4">
+          <LogoutButton />
+        </div>
       </div>
     </div>
   );
