@@ -50,7 +50,7 @@ export async function POST(req: Request) {
 
     // Cleanup the used token
     await prisma.verificationToken.deleteMany({
-      where: { identifier: user.email }
+      where: { identifier: verificationToken.identifier }
     });
 
     return NextResponse.json({ message: "Password reset successful" }, { status: 200 });
